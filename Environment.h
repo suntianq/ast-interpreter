@@ -22,24 +22,24 @@ public:
    StackFrame() : mVars(), mExprs(), mPC() {
    }
 
-   void bindDecl(Decl* decl, int val) {
+   void bindDecl(Decl* decl, int val) { //给Decl赋值操作
       mVars[decl] = val;
    }    
-   int getDeclVal(Decl * decl) {
+   int getDeclVal(Decl * decl) {   //返回Decl的值
       assert (mVars.find(decl) != mVars.end());
       return mVars.find(decl)->second;
    }
-   void bindStmt(Stmt * stmt, int val) {
+   void bindStmt(Stmt * stmt, int val) {  //给Expr赋值操作
 	   mExprs[stmt] = val;
    }
-   int getStmtVal(Stmt * stmt) {
+   int getStmtVal(Stmt * stmt) {  //获得Stmt的值的操作
 	   assert (mExprs.find(stmt) != mExprs.end());
 	   return mExprs[stmt];
    }
-   void setPC(Stmt * stmt) {
+   void setPC(Stmt * stmt) {  //将当前的Stmt赋值给mPC
 	   mPC = stmt;
    }
-   Stmt * getPC() {
+   Stmt * getPC() {   //获取当前的Stmt
 	   return mPC;
    }
 };
@@ -63,7 +63,7 @@ class Environment {
    FunctionDecl * mInput;
    FunctionDecl * mOutput;
 
-   FunctionDecl * mEntry;
+   FunctionDecl * mEntry;   //main函数入口
 public:
    /// Get the declartions to the built-in functions
    Environment() : mStack(), mFree(NULL), mMalloc(NULL), mInput(NULL), mOutput(NULL), mEntry(NULL) {
@@ -90,17 +90,24 @@ public:
 
    /// !TODO Support comparison operation
    void binop(BinaryOperator *bop) {
-	   Expr * left = bop->getLHS();
-	   Expr * right = bop->getRHS();
-
-	   if (bop->isAssignmentOp()) {
-		   int val = mStack.back().getStmtVal(right);
-		   mStack.back().bindStmt(left, val);
-		   if (DeclRefExpr * declexpr = dyn_cast<DeclRefExpr>(left)) {
-			   Decl * decl = declexpr->getFoundDecl();
-			   mStack.back().bindDecl(decl, val);
+	   	Expr * left = bop->getLHS();
+	   	Expr * right = bop->getRHS();
+		int val = 0;
+	   	if (bop->isAssignmentOp()) {
+			int val = expr(right);   //需要先bindstmt，后getStmtVal
+		   	mStack.back().bindStmt(left, val);
+		   	if (DeclRefExpr * declexpr = dyn_cast<DeclRefExpr>(left)) {
+			   	Decl * decl = declexpr->getFoundDecl();
+			   	mStack.back().bindDecl(decl, val);
 		   }
 	   }
+   }
+
+   int expr(Expr *expr){
+		expr = expr->IgnoreImpCasts();
+		if(IntegerLiteral *Intliteral = dyn_cast<IntegerLiteral>(expr)){
+			return Intliteral->getValue().getSExtValue();
+		}
    }
 
    void decl(DeclStmt * declstmt) {
@@ -108,14 +115,18 @@ public:
 			   it != ie; ++ it) {
 		   Decl * decl = *it;
 		   if (VarDecl * vardecl = dyn_cast<VarDecl>(decl)) {
-			   mStack.back().bindDecl(vardecl, 0);
+				if(vardecl->hasInit()){
+					mStack.back().bindDecl(vardecl,expr(vardecl->getInit()));
+				}
+				else
+					mStack.back().bindDecl(vardecl,0);
 		   }
 	   }
    }
    void declref(DeclRefExpr * declref) {
 	   mStack.back().setPC(declref);
 	   if (declref->getType()->isIntegerType()) {
-		   Decl* decl = declref->getFoundDecl();
+		   Decl* decl = declref->getFoundDecl();  //getFoundDecl()：获取发生此引用的 NamedDecl
 
 		   int val = mStack.back().getDeclVal(decl);
 		   mStack.back().bindStmt(declref, val);
