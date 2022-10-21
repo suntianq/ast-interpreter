@@ -1,7 +1,7 @@
 //==--- tools/clang-check/ClangInterpreter.cpp - Clang Interpreter tool --------------===//
 //===----------------------------------------------------------------------===//
 #include <stdio.h>
-
+#include <iostream>
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -94,19 +94,71 @@ public:
 	   	Expr * right = bop->getRHS();
 		int val = 0;
 	   	if (bop->isAssignmentOp()) {
-			int val = expr(right);   //需要先bindstmt，后getStmtVal
+			int val = get_exprval(right);   //需要先bindstmt，后getStmtVal
 		   	mStack.back().bindStmt(left, val);
 		   	if (DeclRefExpr * declexpr = dyn_cast<DeclRefExpr>(left)) {
 			   	Decl * decl = declexpr->getFoundDecl();
 			   	mStack.back().bindDecl(decl, val);
 		   }
 	   }
+	   else{
+		auto op = bop->getOpcode();
+		// std::cout<<"op:"<<op<<std::endl; //debug
+		int leftval=get_exprval(left);
+		int rightval=get_exprval(right);
+		switch (op){
+			case BO_Add:  // +
+				mStack.back().bindStmt(bop,leftval+rightval);
+				break;
+			case BO_Sub: // - 
+				mStack.back().bindStmt(bop,leftval-rightval);
+				break;
+			case BO_Mul: // ×
+				mStack.back().bindStmt(bop,leftval*rightval);
+				break;
+			case BO_Div: // ÷
+				assert(rightval!=0);
+				mStack.back().bindStmt(bop,leftval/rightval);
+				break;
+			case BO_EQ: // ==
+				mStack.back().bindStmt(bop,leftval==rightval);
+				break;
+			case BO_LT: // < 
+				mStack.back().bindStmt(bop,leftval<rightval);
+				break;
+			case BO_GT: // >
+				mStack.back().bindStmt(bop,leftval>rightval);
+				break;
+			case BO_NE:
+				mStack.back().bindStmt(bop,leftval!=rightval);
+				break;
+			case BO_LE:
+				mStack.back().bindStmt(bop,leftval<=rightval);
+				break;
+			case BO_GE:
+				mStack.back().bindStmt(bop,leftval>=rightval);
+				break;
+			default:
+				std::cout<<"Only the following operations are supported:+ - × ÷ == < >"<<std::endl;
+				exit(0);
+				break;
+
+		}
+	   }
    }
 
-   int expr(Expr *expr){
+   int get_exprval(Expr *expr){
 		expr = expr->IgnoreImpCasts();
-		if(IntegerLiteral *Intliteral = dyn_cast<IntegerLiteral>(expr)){
-			return Intliteral->getValue().getSExtValue();
+		if(auto intliteral = dyn_cast<IntegerLiteral>(expr)){
+			return intliteral->getValue().getSExtValue();
+		}
+		else if(auto bop = dyn_cast<BinaryOperator>(expr)){
+			binop(bop);
+			return mStack.back().getStmtVal(bop);
+		}
+		else if(auto refdecl = dyn_cast<DeclRefExpr>(expr)){
+			declref(refdecl);
+			return mStack.back().getStmtVal(refdecl);
 		}
    }
 
@@ -116,7 +168,7 @@ public:
 		   Decl * decl = *it;
 		   if (VarDecl * vardecl = dyn_cast<VarDecl>(decl)) {
 				if(vardecl->hasInit()){
-					mStack.back().bindDecl(vardecl,expr(vardecl->getInit()));
+					mStack.back().bindDecl(vardecl,get_exprval(vardecl->getInit()));
 				}
 				else
 					mStack.back().bindDecl(vardecl,0);
@@ -127,7 +179,6 @@ public:
 	   mStack.back().setPC(declref);
 	   if (declref->getType()->isIntegerType()) {
 		   Decl* decl = declref->getFoundDecl();  //getFoundDecl()：获取发生此引用的 NamedDecl
-
 		   int val = mStack.back().getDeclVal(decl);
 		   mStack.back().bindStmt(declref, val);
 	   }
@@ -150,7 +201,6 @@ public:
 	   if (callee == mInput) {
 		  llvm::errs() << "Please Input an Integer Value : ";
 		  scanf("%d", &val);
-
 		  mStack.back().bindStmt(callexpr, val);
 	   } else if (callee == mOutput) {
 		   Expr * decl = callexpr->getArg(0);

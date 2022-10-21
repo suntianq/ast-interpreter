@@ -37,6 +37,17 @@ public:
    virtual void VisitDeclStmt(DeclStmt * declstmt) {
 	   mEnv->decl(declstmt);
    }
+   virtual void VisitIfStmt(IfStmt *ifstmt){
+      Expr* ifcond = ifstmt->getCond();
+      if(mEnv->get_exprval(ifcond)){
+         VisitStmt(ifstmt->getThen());
+      }
+      else{
+         if(ifstmt->getElse()){
+            VisitStmt(ifstmt->getElse());
+         }
+      }
+   }
 private:
    Environment * mEnv;
 };
