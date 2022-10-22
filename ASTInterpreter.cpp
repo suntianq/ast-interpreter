@@ -11,6 +11,8 @@ using namespace clang;
 
 #include "Environment.h"
 
+//TODO：数组、函数调用、MALLOC、FREE
+
 class InterpreterVisitor : 
    public EvaluatedExprVisitor<InterpreterVisitor> {
 public:
@@ -40,12 +42,32 @@ public:
    virtual void VisitIfStmt(IfStmt *ifstmt){
       Expr* ifcond = ifstmt->getCond();
       if(mEnv->get_exprval(ifcond)){
-         VisitStmt(ifstmt->getThen());
+         Visit(ifstmt->getThen());
       }
       else{
          if(ifstmt->getElse()){
-            VisitStmt(ifstmt->getElse());
+            Visit(ifstmt->getElse());
          }
+      }
+   }
+   virtual void VisitWhileStmt(WhileStmt *whilestmt){
+      Expr* whilecond = whilestmt->getCond();
+      Stmt* whilebody = whilestmt->getBody();
+      while(mEnv->get_exprval(whilecond)){
+         Visit(whilebody);
+      }
+   }
+   virtual void VisitForStmt(ForStmt *forstmt){
+      Stmt *forinit = forstmt->getInit();
+      Expr *forcond = forstmt->getCond();
+      Expr *forinc = forstmt->getInc();
+      Stmt *forbody = forstmt->getBody();
+      if(forinit){
+         Visit(forinit);
+      }
+      while(mEnv->get_exprval(forcond)){
+         Visit(forbody);
+         Visit(forinc);
       }
    }
 private:

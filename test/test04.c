@@ -8,9 +8,9 @@ int main() {
    int b = 10;
    a = -10;
    if (a > 0 ) {
-     b = a;
-   } else {
      b = -a;
+   } else {
+     b = a;
    }
    PRINT(b);
 }

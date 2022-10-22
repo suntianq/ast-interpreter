@@ -88,7 +88,25 @@ public:
 	   return mEntry;
    }
 
-   /// !TODO Support comparison operation
+   void unop(UnaryOperator *uop){ // 解析一元运算
+	auto op = uop->getOpcode();
+	auto uexpr = uop->getSubExpr();
+	int val = get_exprval(uexpr);
+	switch (op)
+	{
+	case UO_Minus:
+		mStack.back().bindStmt(uop,(-1)*val);
+		break;
+	case UO_Plus:
+		mStack.back().bindStmt(uop,val);
+		break;
+	default:
+		std::cout<<"Only the following operations are supported:+ -"<<std::endl;
+		exit(0);
+		break;
+	}
+   }
+
    void binop(BinaryOperator *bop) {
 	   	Expr * left = bop->getLHS();
 	   	Expr * right = bop->getRHS();
@@ -129,17 +147,17 @@ public:
 			case BO_GT: // >
 				mStack.back().bindStmt(bop,leftval>rightval);
 				break;
-			case BO_NE:
+			case BO_NE: //!=
 				mStack.back().bindStmt(bop,leftval!=rightval);
 				break;
-			case BO_LE:
+			case BO_LE: // <=
 				mStack.back().bindStmt(bop,leftval<=rightval);
 				break;
-			case BO_GE:
+			case BO_GE: // >=
 				mStack.back().bindStmt(bop,leftval>=rightval);
 				break;
 			default:
-				std::cout<<"Only the following operations are supported:+ - × ÷ == < >"<<std::endl;
+				std::cout<<"Only the following operations are supported:+ - × ÷ == < > <= >= !="<<std::endl;
 				exit(0);
 				break;
 
@@ -159,6 +177,10 @@ public:
 		else if(auto refdecl = dyn_cast<DeclRefExpr>(expr)){
 			declref(refdecl);
 			return mStack.back().getStmtVal(refdecl);
+		}
+		else if(auto uop = dyn_cast<UnaryOperator>(expr)){
+			unop(uop);
+			return mStack.back().getStmtVal(uop);
 		}
    }
 

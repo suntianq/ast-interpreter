@@ -14,5 +14,3 @@ int main() {
    PRINT(f(b));
 }
 
-
-#10

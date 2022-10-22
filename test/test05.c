@@ -6,7 +6,7 @@ extern void PRINT(int);
 int main() {
    int a;
    int b = 0;
-   a = 10;
+   a = 100;
    while ( b < a) {
      b = b + 1;
    }
