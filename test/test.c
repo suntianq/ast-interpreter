@@ -3,11 +3,9 @@ extern void * MALLOC(int);
 extern void FREE(void *);
 extern void PRINT(int);
 
-int b=100;
-int a=10;
 int main() {
-   PRINT(b);
-   PRINT(a);
+	int a[3];
+   a[0] = 1;
+   a[1] = a[0];
+   PRINT(a[2]);
 }
-
-//100 10

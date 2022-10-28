@@ -17,3 +17,4 @@ int main() {
    PRINT(*c[0]);
    PRINT(*c[1]);
 }
+//10 20

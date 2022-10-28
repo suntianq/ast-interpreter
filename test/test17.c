@@ -14,3 +14,4 @@ int main() {
    PRINT(*a);
    FREE(a);
 }
+//10
