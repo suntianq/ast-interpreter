@@ -77,7 +77,6 @@ public:
 						mStack.back().bindDecl(vardecl, get_exprval(vardecl->getInit()));
 					else
 						mStack.back().bindDecl(vardecl, 0);
-				
 			}
 		}
 	}
@@ -106,7 +105,7 @@ public:
 				else if (arr->getElementType().getTypePtr()->isCharType())
 					*((char *)mStack.back().getDeclVal(vardecl) + indexval) = (char)rightval;
 				else
-						*((int64_t **)mStack.back().getDeclVal(vardecl) + indexval) = (int64_t *)rightval;
+					*((int64_t **)mStack.back().getDeclVal(vardecl) + indexval) = (int64_t *)rightval;
 			}
 			else if (auto unaryExpr = dyn_cast<UnaryOperator>(left))
 				*((int64_t*)get_exprval(unaryExpr->getSubExpr()))=rightval;
