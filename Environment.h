@@ -19,7 +19,6 @@ class StackFrame{
 public:
 	StackFrame() : mVars(), mExprs(){
 	}
-
 	void setReturn(int64_t val){		
 		retValue = val;
 	}
@@ -183,7 +182,6 @@ public:
 							mStack.back().bindDecl(vardecl, (int64_t)arraystore);
 						}
 						else{
-						    // int* c[2];
 							int64_t **arraystore = new int64_t *[len];
 							for (int i = 0; i < len; i++)
 								arraystore[i] = 0;
